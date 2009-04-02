@@ -137,12 +137,12 @@ class WysiwygproHelper extends AppHelper {
       }
    }
    
-   function input($fieldName, $options = array()) {
+   function input($fieldName, $options = array(),$settings = array()) {
       $model =& ClassRegistry::getObject($this->Form->model());
       $ret = $this->Form->input($fieldName,$options);
       
       if($model->getColumnType($this->field()) == 'text') //Convert only text areas
-         return $this->replaceTextArea($fieldName,$options,$ret);
+         return $this->replaceTextArea($fieldName,$options,$ret,$settings);
       else return $ret;
    }
    
