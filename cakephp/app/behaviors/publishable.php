@@ -17,7 +17,7 @@
  * @lastmodified  $Date: 2009-04-02 13:17:10 -0500 (Thu, 2 Apr 2009) $
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
- 
+
 class PublishableBehavior extends ModelBehavior {
 
 	var $__settings = array();
@@ -40,18 +40,12 @@ class PublishableBehavior extends ModelBehavior {
       if(!array_key_exists('published',$query)) return true;
       
       if($query['published']) { //Return published
-         
+         $conditions = $this->publishConditions(true);
          
          $query['conditions'] = Set::merge($query['conditions'],$conditions);     
       }
       else { //Return unpublished
-         $conditions = array(
-            'or' => array(           
-               $model->alias . '.' . $this->__settings[$model->alias]['start_column'] . ' >' => date("Y-m-d H:i:s"),
-               $model->alias . '.' . $this->__settings[$model->alias]['start_column'] => null,
-               $model->alias . '.' . $this->__settings[$model->alias]['end_column'] . ' <=' => date("Y-m-d H:i:s")
-               )
-            );
+         $conditions = $this->publishConditions(false);
             
          $query['conditions'] = Set::merge($query['conditions'],$conditions);
       }
@@ -81,9 +75,7 @@ class PublishableBehavior extends ModelBehavior {
             );
             
          return $conditions;
-	   }
-	   
-	   
+	   }	   	   
 	}
 	
 	function _checkColumn(&$model,$column) {
