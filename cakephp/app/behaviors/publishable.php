@@ -40,12 +40,12 @@ class PublishableBehavior extends ModelBehavior {
       if(!array_key_exists('published',$query)) return true;
       
       if($query['published']) { //Return published
-         $conditions = $this->publishConditions(true);
+         $conditions = $this->publishConditions($model, true);
          
          $query['conditions'] = Set::merge($query['conditions'],$conditions);     
       }
       else { //Return unpublished
-         $conditions = $this->publishConditions(false);
+         $conditions = $this->publishConditions($model, false);
             
          $query['conditions'] = Set::merge($query['conditions'],$conditions);
       }
@@ -53,7 +53,7 @@ class PublishableBehavior extends ModelBehavior {
       return $query;
 	}
 	
-	function publishConditions($published = true) {
+	function publishConditions(&$model, $published = true) {
 	   if($published) {
 	      $conditions = array(
             $model->alias . '.' . $this->__settings[$model->alias]['start_column'] . ' <=' => date("Y-m-d H:i:s"),
