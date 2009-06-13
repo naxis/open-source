@@ -13,7 +13,7 @@
  *
  * @filesource
  * @copyright     Copyright 2009, Brightball, Inc. (http://www.brightball.com)
- * @link          http://github.com/brightball/open-source/tree/master Brightball Open Source
+ * @link          http://github.com/aramisbear/brightball-open-source/tree/master Brightball Open Source
  * @lastmodified  $Date: 2009-06-12 13:23:10 -0500 (Sat, Jun 13 2009) $
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
@@ -83,7 +83,15 @@ class WysiwygproHelper extends AppHelper {
       $editor->clearSizeMenu();
       
       $empty = Set::normalize($this->defaults);
-      $settings = Set::normalize($settings);                 
+      $settings = Set::normalize($settings);    
+      
+      if(!empty($settings['directories'])) {
+         foreach($settings['directories'] AS $sd) {
+            $empty['directories'][] = $sd;
+         }
+         unset($settings['directories']);
+      }
+         
       $settings = Set::merge($empty,$settings);
       
       $this->directory_permissions = $settings['_directory_permissions'];
@@ -142,7 +150,7 @@ class WysiwygproHelper extends AppHelper {
       }      
       
       $settings = Set::merge($this->defaults['_directory_settings'][$type],$settings);    
-      unset($settings['type']);  
+      //unset($settings['type']);  
       
       $special = $this->special_settings['directories'];
       
