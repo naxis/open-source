@@ -13,7 +13,7 @@
  *
  * @filesource
  * @copyright     Copyright 2009, Brightball, Inc. (http://www.brightball.com)
- * @link          http://github.com/aramisbear/brightball-open-source/tree/master Brightball Open Source
+ * @link          http://github.com/brightball/open-source/tree/master Brightball Open Source
  * @lastmodified  $Date: 2009-06-12 13:23:10 -0500 (Sat, Jun 13 2009) $
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */

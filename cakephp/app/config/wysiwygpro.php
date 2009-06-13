@@ -1,7 +1,8 @@
 <?php 
 //Place this file in your app/config directory
 //WYSIWYGPro settings
-//WYSIWYGPro Developer Documentation - http://www.wysiwygpro.com/index.php?id=56
+//For full list of available settings see WYSIWYGPro Developer Documentation - http://www.wysiwygpro.com/index.php?id=56
+
 $config['Wysiwygpro']['htmlCharset'] = 'UTF-8';
 //$config['Wysiwygpro']['safariSupport'] = true; //This setting is included in the documentation but apparently not actually available
 $config['Wysiwygpro']['operaSupport'] = true;
