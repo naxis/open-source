@@ -14,7 +14,7 @@
  * @filesource
  * @copyright     Copyright 2009, Brightball, Inc. (http://www.brightball.com)
  * @link          http://github.com/aramisbear/brightball-open-source/tree/master Brightball Open Source
- * @lastmodified  $Date: 2009-04-02 13:17:10 -0500 (Thu, 2 Apr 2009) $
+ * @lastmodified  $Date: 2009-06-12 13:23:10 -0500 (Sat, Jun 13 2009) $
  * @license       http://www.opensource.org/licenses/mit-license.php The MIT License
  */
  
@@ -25,17 +25,11 @@ class WysiwygproHelper extends AppHelper {
    var $helpers = array('Form');
    
    var $headers = '';
-   var $inlineHeaders = false;
-   var $editor_width = '100%';
-   var $editor_height = '300';
-   
-   var $directory_permissions = '0777'; //Permissions for directories that are created
-   
+   var $directory_permissions = null; 
    var $defaults = null;
    
    //Apply special handling to these setting arguments
    var $special_settings = array(
-         'addRegisteredButton',
          'directories' => array('filters')
       );
    
@@ -47,93 +41,12 @@ class WysiwygproHelper extends AppHelper {
       if(!empty($this->headers)) echo $this->getHeaders();
    }
    
-   function _set_defaults() {
+   function _set_defaults() { //Defaults are set in app/config/wysiwygpro.php
       if($this->defaults == null) {
          $this->special_settings = Set::normalize($this->special_settings);
          
-         $this->defaults = array(
-            'htmlCharset' => 'UTF-8',     //Place nice with internationalization  
-            'safariSupport' => true,      //Not officially supported
-            'operaSupport' => true,       //Not officially supported
-            'disabledFeatures' => array(  //Disabled but likely requested features: fontcolor, highlight
-               'print','outdent','indent','full','fontcolor','spacer','emoticon','snippets','highlight','dirltr','dirrtl','bookmark'
-            ),
-            'addRegisteredButton' => array('document','after:link'),
-            'stylesMenu' => array( 
-                   'p' => 'Paragraph',
-                   'div' => 'Div',
-                   'h2' => 'Heading 2',
-                   'h3' => 'Heading 3',
-                   'h4' => 'Heading 4',
-                   'h5' => 'Heading 5',
-                   'blockquote' => 'Blockquote',
-                   'p class="warning"' => 'Warning Box' //Example of a style with a class
-            ),
-            'directories' => array( //Default directories to include array($type,$settings)
-                  array('image',array()),
-                  array('media',array()),
-                  array('document',array())
-               ),
-            'directory_types' => array(
-               //images
-               'image' => array(
-                  'dir' => WWW_ROOT . 'img',
-                  'URL' => '/img',
-                  'name' => 'All Images',
-                  'editImages' => false,
-                  'renameFiles' => false,
-                  'renameFolders' => false,
-                  'deleteFiles' => false,
-                  'deleteFolders' => false,
-                  'copyFiles' => true,
-                  'copyFolders' => true,
-                  'moveFiles' => false,
-                  'moveFolders' => false,
-                  'upload' => false,
-                  'overwrite' => false,
-                  'createFolders' => true,
-                  'filters' => array('Thumbnails')
-               ),
-               //Any file to be linked to, including images and videos
-               'document' => array(
-                  'dir' => WWW_ROOT . 'files' . DS . 'docs',
-                  'URL' => '/files/docs',
-                  'name' => 'All Documents',
-                  'editImages' => true,
-                  'renameFiles' => true,
-                  'renameFolders' => true,
-                  'deleteFiles' => true,
-                  'deleteFolders' => true,
-                  'copyFiles' => true,
-                  'copyFolders' => true,
-                  'moveFiles' => true,
-                  'moveFolders' => true,
-                  'upload' => true,
-                  'overwrite' => true,
-                  'createFolders' => true,
-                  'fitlers' => array()
-               ),
-               //Video, flash, etc
-               'media' => array(
-                  'dir' => WWW_ROOT . 'files' . DS . 'media',
-                  'URL' => '/files/media',
-                  'name' => 'All Media',
-                  'editImages' => false,
-                  'renameFiles' => true,
-                  'renameFolders' => true,
-                  'deleteFiles' => true,
-                  'deleteFolders' => true,
-                  'copyFiles' => true,
-                  'copyFolders' => true,
-                  'moveFiles' => true,
-                  'moveFolders' => true,
-                  'upload' => true,
-                  'overwrite' => true,
-                  'createFolders' => true,
-                  'filters' => array()
-                  )   
-               )
-         );   
+         Configure::load('wysiwygpro');
+         $this->defaults = Configure::read('Wysiwygpro');     
       }
    }
    
@@ -173,28 +86,30 @@ class WysiwygproHelper extends AppHelper {
       $settings = Set::normalize($settings);                 
       $settings = Set::merge($empty,$settings);
       
+      $this->directory_permissions = $settings['_directory_permissions'];
+      
       foreach($settings AS $st => $val) {
          if(!is_scalar($st)) {
             trigger_error('Invalid setting match: ' . print_r($st,1));
          }
-         elseif(!array_key_exists($st, $this->special_settings)) { //Normal                        
-            if(method_exists($editor,$st)) { //Single arg functions
-               $editor->{$st}($val);
+         elseif(!array_key_exists($st, $this->special_settings)) { //Normal        
+            if(substr($st,0,1) == '_') continue; //Helper settings, ignore
+            elseif(method_exists($editor,$st)) { //Single arg functions
+               if(!is_array($val)) $val = array($val);             
+               call_user_func_array(array($editor,$st),$val);
             }
-            else { //Variable
+            elseif(property_exists($editor,$st)) { //Variable
                $editor->{$st} = $val;
+            }
+            else {
+               trigger_error($st . ' is not a WYSIWYGPro method or property and the helper is not yet configured to handle this function');
             }
          }
          else { //Special handlers
             if($st == 'directories') {
-               foreach($val AS $args) {
-                  if(!isset($args[1])) $args[1] = array();
-                  
-                  $this->addDirectory($editor, $args[0], $args[1]);
+               foreach($val AS $args) {                  
+                  $this->addDirectory($editor, $args);
                }
-            }
-            elseif($st == 'addRegisteredButton') {
-               $editor->addRegisteredButton($val[0],$val[1]);
             }
             else { 
               trigger_error($st . ' is a special setting that has not been handled yet.');
@@ -203,29 +118,32 @@ class WysiwygproHelper extends AppHelper {
       }
       
       //Get all the HTML the way that Cake wanted to build it
-      //But move the error after the label and before the editor
+      //But move the error after the label and before the editor for better read-ability      
       
-      //The Helper::output function is not used because $editor->display immediately outputs the editor HTML
-      
+      //The Helper::output function is not used because $editor->display immediately outputs the editor HTML      
       list($begin,$junk) = explode('<textarea',$input_html);
       $error = $this->Form->error($fieldName);   
       echo $begin . (empty($error) ? '' : $error) . '<div class="wysiwygpro">';
       
       //Output the editor
-      if(!$this->inlineHeaders) $this->addHeaders($editor->fetchHeadContent());   
+      if(!$settings['_inline_headers']) $this->addHeaders($editor->fetchHeadContent());   
       
-      $editor->display($this->editor_width,$this->editor_height); //width, height
+      $editor->display($settings['_editor_width'],$settings['_editor_height']); //width, height
       echo '</div></div>';
    }
    
-   function addDirectory(&$editor, $type, $settings = array()) {
+   function addDirectory(&$editor, $settings = array()) {
       
-      if(!isset($this->defaults['directory_types'][$type])) {
+      $type = $settings['type'];
+      
+      if(!isset($this->defaults['_directory_settings'][$type])) {
          trigger_error($type . ' is not a valid directory type');
          return false;
-      }
+      }      
       
-      $settings = Set::merge($this->defaults['directory_types'][$type],$settings);      
+      $settings = Set::merge($this->defaults['_directory_settings'][$type],$settings);    
+      unset($settings['type']);  
+      
       $special = $this->special_settings['directories'];
       
       $dir = new wproDirectory();
